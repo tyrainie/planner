@@ -1,0 +1,117 @@
+src/
+├── app/                  # Next.js 14 App Router
+├── components/           # UI 組件 (Shadcn UI)
+├── hooks/                # 自定義 Hooks (例如 useLocalStorage)
+├── store/                # Zustand Store (tripStore.ts)
+├── lib/                  # 工具函式 (date-fns, utils)
+└── types/                # TypeScript 介面定義
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        'jp-background': '#F8F9FA',
+        'jp-red': '#BC002D',
+        'jp-black': '#2D3436',
+        'sakura-pink': '#FFB7C5',
+        'matcha-green': '#00A86B',
+      },
+      borderRadius: {
+        '2xl': '1rem',
+      },
+      backdropBlur: {
+        md: '12px',
+      }
+    },
+  },
+}
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface TripStore {
+  trips: Trip[];
+  addTrip: (trip: Trip) => void;
+  updateActivity: (tripId: string, dayIndex: number, activities: Activity[]) => void;
+  // ... 其他 actions
+}
+
+export const useTripStore = create<TripStore>()(
+  persist(
+    (set) => ({
+      trips: [],
+      addTrip: (newTrip) => set((state) => ({ trips: [...state.trips, newTrip] })),
+      // 實現其他 CRUD 邏輯
+    }),
+    { name: 'japan-travel-storage' }
+  )
+);
+// components/ActivityCard.tsx
+import { GripVertical, Utensils, Camera, Train, Hotel } from 'lucide-react';
+
+const icons = {
+  Food: <Utensils className="text-orange-500" />,
+  Sightseeing: <Camera className="text-blue-500" />,
+  Transport: <Train className="text-green-500" />,
+  Hotel: <Hotel className="text-purple-500" />,
+};
+
+export const ActivityCard = ({ activity, index }) => (
+  <Draggable draggableId={activity.id} index={index}>
+    {(provided) => (
+      <div 
+        ref={provided.innerRef} 
+        {...provided.draggableProps}
+        className="flex gap-4 mb-6 group"
+      >
+        <div className="flex flex-col items-center">
+          <div className="p-2 rounded-full bg-white shadow-sm border border-gray-100">
+            {icons[activity.type]}
+          </div>
+          <div className="w-0.5 h-full bg-gray-200 mt-2 group-last:hidden" />
+        </div>
+        
+        <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-transparent hover:border-jp-red/20 transition-all">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-bold text-jp-red mb-1">{activity.time}</span>
+            <div {...provided.dragHandleProps}><GripVertical size={16} className="text-gray-400" /></div>
+          </div>
+          <h4 className="font-bold text-jp-black">{activity.location}</h4>
+          <p className="text-sm text-gray-500 mt-1">{activity.memo}</p>
+          <div className="mt-2 text-xs font-mono text-gray-400">¥{activity.cost.toLocaleString()}</div>
+        </div>
+      </div>
+    )}
+  </Draggable>
+);
+const CurrencyConverter = () => {
+  const [jpy, setJpy] = useState<number>(0);
+  const rate = 0.055; // 假設匯率，實際可接入 API
+
+  return (
+    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+      <h3 className="text-lg font-bold mb-4">貨幣轉換 (實時)</h3>
+      <div className="space-y-4">
+        <div>
+          <label className="text-xs text-gray-400">JPY 日圓</label>
+          <input 
+            type="number" 
+            value={jpy} 
+            onChange={(e) => setJpy(Number(e.target.value))}
+            className="w-full text-2xl font-bold border-b border-gray-200 focus:border-jp-red outline-none transition-colors"
+          />
+        </div>
+        <div className="flex justify-center"><ArrowDownUp className="text-jp-red" /></div>
+        <div>
+          <label className="text-xs text-gray-400">HKD 港幣</label>
+          <input 
+            type="number" 
+            value={(jpy * rate).toFixed(2)} 
+            readOnly
+            className="w-full text-2xl font-bold text-gray-400 outline-none"
+          />
+        </div>
+        <p className="text-[10px] text-center text-gray-400">當前匯率：1 JPY ≈ 0.055 HKD</p>
+      </div>
+    </div>
+  );
+};
