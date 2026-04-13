@@ -115,3 +115,14 @@ const CurrencyConverter = () => {
     </div>
   );
 };
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/*"
+  to = "/.next/server/app/:splat"
+  status = 200
+
+[build]
+  command = "npm run build"
+  publish = ".next"
